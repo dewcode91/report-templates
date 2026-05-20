@@ -1,29 +1,29 @@
-# Unrestricted Admin Features Exposed via robots.txt
+# Unrestricted Admin Features Exposed via `robots.txt`
 
-#### Description
+## Description
+This issue is a **vertical privilege escalation** caused by exposing an administrative path in `robots.txt`. Attackers can enumerate `robots.txt` or brute-force common admin paths to discover and access sensitive functionality.
 
-Vertical privilege escalation occurs when an application fails to restrict access to sensitive or administrative functionality, allowing users with insufficient privileges to access powerful features. In many cases, admin interfaces are not linked in standard user navigation, but if access controls are missing, anyone who knows (or discovers) the URL can reach them.
+Example:
+- Admin path: `https://insecure-website.com/admin`
+- `robots.txt`: `https://insecure-website.com/robots.txt`
 
-Frequently, sensitive locations such as admin panels are inadvertently disclosed in files intended for web crawlers, like `robots.txt`. For example:
+If the admin path is listed, unauthorized users can directly access privileged interfaces.
 
-- Admin Control Panel: `https://insecure-website.com/admin`
-- robots.txt location: `https://insecure-website.com/robots.txt`
+## Steps to Reproduce
+1. Visit `https://<target>/robots.txt`.
+2. Identify any `Disallow` entries referencing admin paths.
+3. Replace `/robots.txt` with the disclosed admin path (e.g., `/admin`).
+4. Confirm access to privileged functionality (e.g., user deletion).
 
-When a sensitive path is present in `robots.txt`, attackers can discover it by reviewing the file's contents. Even if not listed, common wordlists allow brute-forcing such endpoints.
+## Impact
+Unauthorized users can access administrative features, enabling:
+- Data modification or deletion
+- Configuration changes
+- Account management (including privilege escalation)
 
-#### Steps to Reproduce
+This threatens the application’s confidentiality, integrity, and availability.
 
-1. Navigate to the application and access `robots.txt` by appending `/robots.txt` to the base URL.
-2. Observe the presence of a `Disallow` directive referencing the admin panel path.
-3. Replace `/robots.txt` in the address bar with the disclosed admin path (e.g., `/administrator-panel`) to access the admin interface.
-4. Demonstrate impact by performing privileged actions, such as deleting a user (e.g., user `carlos`).
-
-#### Impact
-
-Exposure of admin functionality to unauthorized users enables vertical privilege escalation. As a result, an attacker could carry out actions reserved for administrators, such as:
-
-- Modifying or deleting sensitive system data  
-- Changing configuration settings  
-- Managing user accounts, including granting themselves elevated permissions  
-
-Such access puts the application's integrity, confidentiality, and availability at significant risk.
+## Recommendation
+- Remove sensitive paths from `robots.txt`.
+- Enforce **server-side access control** on all admin endpoints.
+- Add monitoring for admin-path enumeration.
