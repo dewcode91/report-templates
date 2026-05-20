@@ -1,35 +1,31 @@
-# Disclosure of Hidden Admin-Panel Path via JavaScript
+# Disclosure of Hidden Admin Panel Path via JavaScript
 
 ## Description
+Hiding admin functionality behind an obscure URL is **not** a security control. If the URL is embedded in client-side JavaScript, any user can discover it by viewing source or inspecting scripts.
 
-Relying on "security by obscurity" — such as hiding sensitive admin functionality by using a non-obvious URL — does not provide effective protection. If the obfuscated URL is referenced in client-side JavaScript, it can be easily discovered by reviewing the site’s source code.
-
-For instance, an admin panel at:
-
+Example:
 ```
 https://insecure-website.com/administrator-panel-yb556
 ```
 
-may appear unguessable, but if its URL appears in accessible JavaScript, all users (including unauthorized ones) can find it:
-
+Exposed in client-side JS:
 ```javascript
-<script>
-var isAdmin = false;
 if (isAdmin) {
   var adminPanelTag = document.createElement('a');
   adminPanelTag.setAttribute('href', 'https://insecure-website.com/administrator-panel-yb556');
-  adminPanelTag.innerText = 'Admin panel';
 }
-</script>
 ```
-This snippet exposes the admin panel URL to any user inspecting the website’s source.
 
 ## Steps to Reproduce
-
-1. Open the site homepage and view its source (`view-source:` URI prefix).
-2. Search for JavaScript variables or links referencing the admin panel (e.g., `/administrator-panel-yb556`).
-3. Access the exposed admin panel URL directly.
+1. Open the homepage.
+2. View source (`view-source:`) or inspect JS files.
+3. Search for references to admin paths (e.g., `/administrator-panel-...`).
+4. Open the discovered admin URL directly.
 
 ## Impact
+Attackers can discover and attempt to access admin functionality, leading to privilege escalation if backend access controls are weak.
 
-Exposing hidden admin URLs allows low-privilege users or attackers to discover and potentially access sensitive administrative features. This undermines access controls, enabling privilege escalation and unauthorized administrative actions, which can compromise the system’s security.
+## Recommendation
+- Do **not** rely on obscurity for admin paths.
+- Remove admin URLs from client-side code.
+- Enforce robust server-side authorization checks.
