@@ -1,4 +1,4 @@
-# Disclosure of Hidden Admin Path /administrator-panel-yb556 via JavaScript
+# Disclosure of Hidden Admin Path `/administrator-panel-yb556` via JavaScript
 
 ## Description
 Hiding admin functionality behind an obscure URL is **not** a security control. If the URL is embedded in client-side JavaScript, any user can discover it by viewing source or inspecting scripts.
