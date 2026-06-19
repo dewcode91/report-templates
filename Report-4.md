@@ -1,4 +1,4 @@
-# Broken Access Control Allows Unauthorized Admin Actions
+# Bypassing Access Controls via `X-Original-URL` Header
 
 ## Description
 
