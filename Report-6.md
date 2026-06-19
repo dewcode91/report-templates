@@ -1,4 +1,4 @@
-# Cross-Site Scripting (XSS) Vulnerability in Outdated Swagger UI
+# XSS Via `?configUrl` or `?url` query parameters
 
 ## Description
 Swagger UI is a user-friendly web application that allows users to interact with APIs described by the OpenAPI (formerly Swagger) specification. It provides an interface for viewing and testing API endpoints without writing code.
