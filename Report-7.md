@@ -1,37 +1,32 @@
-# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
+# Blind SSRF via "Import Calendar from URL" Feature
 
-## Description
+## Summary
+The "Import Calendar from URL" functionality in the calendar application is vulnerable to blind Server-Side Request Forgery (SSRF). This allows attackers to make the server initiate requests to internal network resources or conduct port scanning, which may lead to sensitive information disclosure or further compromise of internal systems.
 
-The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
+## Vulnerability Details
 
-## Proof of Concept
+While reviewing the calendar app, I discovered that the feature for importing calendars from external URLs can be exploited for SSRF:
 
-```
-GET /api/v1/users/1337/profile HTTP/2
-Host: app.example.com
-Authorization: Bearer eyJ...
-Content-Type: application/json
-
----
-
-HTTP/2 200 OK
-
-{
-  "id": 1337,
-  "name": "Integriti",
-  "email": "hunter2@example.com",
-  "phone": "+1-555-5555",
-  "address": "1337 Hackers Ave"
-}
-```
+- When attempting to import a calendar from `http://127.0.0.1/`, the server correctly blocks the request and returns `unsupported_url`.
+- However, specifying a local address with an explicit port, such as `http://127.0.0.1:22`, results in a successful (albeit blank) calendar import. Ports 22, 25, and 873 responded during my scan across ports 1-1000.
+- This behavior enables attackers to probe internal network ports and potentially interact with services that should not be exposed, risking data exfiltration or further attacks.
 
 ## Steps to Reproduce
 
-1. Log in as user A (attacker) at app.example.com/login.
-2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
-3. Change the user ID in the path to another user's ID (e.g., 1337).
-4. Observe the full profile data of user 1337 in the response.
+1. Log in to `https://calendar.example.com`.
+2. Click the import icon next to "Calendars" and select "From a URL".
+3. Enter a URL like `http://127.0.0.1:22` and observe the system’s response.
 
 ## Impact
 
-Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.
+By exploiting this vulnerability, attackers can:
+
+- **Conduct Internal Port Scans:** The server can be used to scan internal IPs and ports, identifying potential internal services and weaknesses.
+- **Access Restricted Resources:** Attackers may reach internal services or files not accessible externally, risking data leakage or further exploitation.
+- **Enable Further Attacks:** Gaining information about internal network structure and open ports can assist in lateral movement or other attack vectors.
+
+## Recommendation
+
+- Implement strict allow-lists for external URLs and disallow any access to internal IP ranges and reserved addresses, regardless of port.
+- Sanitize and validate all input URLs to prevent SSRF attacks.
+- Monitor and alert on suspicious import attempts, especially those targeting private network ranges or unusual ports.

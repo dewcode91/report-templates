@@ -1,37 +1,25 @@
-# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
+# Cross-Site Scripting (XSS) Vulnerability in Search Parameter
 
-## Description
+## Summary
 
-The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
-
-## Proof of Concept
-
-```
-GET /api/v1/users/1337/profile HTTP/2
-Host: app.example.com
-Authorization: Bearer eyJ...
-Content-Type: application/json
-
----
-
-HTTP/2 200 OK
-
-{
-  "id": 1337,
-  "name": "Integriti",
-  "email": "hunter2@example.com",
-  "phone": "+1-555-5555",
-  "address": "1337 Hackers Ave"
-}
-```
+A Cross-Site Scripting (XSS) vulnerability exists in the search parameter of [https://www.example.com/search?q=](https://www.example.com/search?q=). An attacker can inject malicious JavaScript via the `q` parameter, leading to arbitrary script execution in users' browsers.
 
 ## Steps to Reproduce
 
-1. Log in as user A (attacker) at app.example.com/login.
-2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
-3. Change the user ID in the path to another user's ID (e.g., 1337).
-4. Observe the full profile data of user 1337 in the response.
+1. Navigate to:  
+   `https://www.example.com/search?q=%27-alert(document.domain)-%27`
+2. An alert pop-up will appear, demonstrating code execution.
 
 ## Impact
 
-Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.
+This vulnerability allows attackers to:
+- Steal sensitive user information (e.g., session cookies)
+- Hijack user accounts
+- Perform actions as other users (impersonation)
+- Conduct phishing attacks or deface the site
+
+Such issues can result in reputational harm, legal liability, and loss of user trust.
+
+## Recommendation
+
+Sanitize and properly encode user-supplied input in the search parameter to prevent script injection.

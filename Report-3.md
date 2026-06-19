@@ -1,37 +1,34 @@
-# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
+# Unauthorized Access to Admin Panel via Client-Side Role Control
 
-## Description
+#### Description
 
-The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
+The application determines user privileges at login and stores them in a user-controllable location (e.g., hidden field, cookie, or query string parameter). This allows attackers to easily elevate their privileges by modifying these values, granting themselves unauthorized admin access. For example:
 
-## Proof of Concept
+- `https://insecure-website.com/login/home.jsp?admin=true`
+- Cookie: `Admin=true`
+
+The following HTTP request shows the insecure usage of an `Admin` cookie:
 
 ```
-GET /api/v1/users/1337/profile HTTP/2
-Host: app.example.com
-Authorization: Bearer eyJ...
-Content-Type: application/json
-
----
-
-HTTP/2 200 OK
-
-{
-  "id": 1337,
-  "name": "Integriti",
-  "email": "hunter2@example.com",
-  "phone": "+1-555-5555",
-  "address": "1337 Hackers Ave"
-}
+GET /admin HTTP/1.1
+Host: ac961f1c1ef4adef80bd6a6c0000006c.web-security-academy.net
+...
+Cookie: session=DOOAJa8Mkf2EDu4mLoLImfnDaP5My8yS; Admin=false
+...
 ```
 
-## Steps to Reproduce
+#### Steps to Reproduce
 
-1. Log in as user A (attacker) at app.example.com/login.
-2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
-3. Change the user ID in the path to another user's ID (e.g., 1337).
-4. Observe the full profile data of user 1337 in the response.
+1. Attempt to access `/admin` to confirm lack of access.
+2. Log in via the standard user login page.
+3. Intercept the login response (e.g., with Burp Suite) and observe the `Admin=false` cookie being set.
+4. Modify the cookie to `Admin=true` and resend the request.
+5. Access `/admin`—the user now has admin privileges.
 
-## Impact
+#### Impact
 
-Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.
+This vulnerability enables any user to gain administrative access by simply changing the client-side value, potentially resulting in privilege escalation, unauthorized actions (e.g., deleting users), and full system compromise.
+
+#### Recommendation
+
+Implement server-side access control checks for all sensitive endpoints. Do not rely on user-modifiable data such as cookies or URL parameters for authorization decisions.
