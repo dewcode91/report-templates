@@ -1,4 +1,4 @@
-# SSRF via “Upload Image from URL” Feature
+# SSRF via `url=` parameter
 
 ## Description
 The “Upload image from URL” feature accepts arbitrary URLs and does not block access to internal services. This enables **Server-Side Request Forgery (SSRF)**.
