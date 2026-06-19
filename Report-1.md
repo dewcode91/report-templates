@@ -1,4 +1,4 @@
-# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
+# IDOR on `/api/v1/users/{id}/profile` allows unauthorized access to user PII
 
 ## Description
 
