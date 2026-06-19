@@ -1,37 +1,17 @@
-# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
+# Information Disclosure: Django Debug Mode Enabled
 
 ## Description
-
-The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
-
-## Proof of Concept
-
-```
-GET /api/v1/users/1337/profile HTTP/2
-Host: app.example.com
-Authorization: Bearer eyJ...
-Content-Type: application/json
-
----
-
-HTTP/2 200 OK
-
-{
-  "id": 1337,
-  "name": "Integriti",
-  "email": "hunter2@example.com",
-  "phone": "+1-555-5555",
-  "address": "1337 Hackers Ave"
-}
-```
+The website `https://stage.example.com/` is operating with Django's debug mode enabled (`DEBUG = True`). When enabled, Django displays detailed error tracebacks with extensive environment metadata, including sensitive settings, upon encountering exceptions.
 
 ## Steps to Reproduce
-
-1. Log in as user A (attacker) at app.example.com/login.
-2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
-3. Change the user ID in the path to another user's ID (e.g., 1337).
-4. Observe the full profile data of user 1337 in the response.
+1. Visit: https://stage.example.com/NON_EXISTING_PATH/
+2. Observe the detailed debug information displayed in the error page.
 
 ## Impact
+Debug mode exposes internal details such as configuration files, API keys, database credentials, and server directories. A malicious actor could exploit this information to compromise the system’s security.
 
-Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.
+## CVSS Score
+[CVSS v3.0: 5.3 (Medium)](https://www.first.org/cvss/calculator/3.0#CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N)
+
+## Recommendation
+Disable Django debug mode (`DEBUG = False`) in all production and staging environments to prevent information leakage. Ensure sensitive settings are never exposed publicly.

@@ -1,37 +1,29 @@
-# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
+# Unrestricted Admin Features Exposed via `robots.txt`
 
 ## Description
+This issue is a **vertical privilege escalation** caused by exposing an administrative path in `robots.txt`. Attackers can enumerate `robots.txt` or brute-force common admin paths to discover and access sensitive functionality.
 
-The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
+Example:
+- Admin path: `https://insecure-website.com/admin`
+- `robots.txt`: `https://insecure-website.com/robots.txt`
 
-## Proof of Concept
-
-```
-GET /api/v1/users/1337/profile HTTP/2
-Host: app.example.com
-Authorization: Bearer eyJ...
-Content-Type: application/json
-
----
-
-HTTP/2 200 OK
-
-{
-  "id": 1337,
-  "name": "Integriti",
-  "email": "hunter2@example.com",
-  "phone": "+1-555-5555",
-  "address": "1337 Hackers Ave"
-}
-```
+If the admin path is listed, unauthorized users can directly access privileged interfaces.
 
 ## Steps to Reproduce
-
-1. Log in as user A (attacker) at app.example.com/login.
-2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
-3. Change the user ID in the path to another user's ID (e.g., 1337).
-4. Observe the full profile data of user 1337 in the response.
+1. Visit `https://<target>/robots.txt`.
+2. Identify any `Disallow` entries referencing admin paths.
+3. Replace `/robots.txt` with the disclosed admin path (e.g., `/admin`).
+4. Confirm access to privileged functionality (e.g., user deletion).
 
 ## Impact
+Unauthorized users can access administrative features, enabling:
+- Data modification or deletion
+- Configuration changes
+- Account management (including privilege escalation)
 
-Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.
+This threatens the application’s confidentiality, integrity, and availability.
+
+## Recommendation
+- Remove sensitive paths from `robots.txt`.
+- Enforce **server-side access control** on all admin endpoints.
+- Add monitoring for admin-path enumeration.

