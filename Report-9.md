@@ -1,4 +1,4 @@
-# Cross-Site Scripting (XSS) Vulnerability in Search Parameter
+# Cross-Site Scripting (XSS) Vulnerability in `q=` Parameter
 
 ## Summary
 
