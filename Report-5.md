@@ -1,4 +1,4 @@
-# Open Redirect Leading to Cross-Site Scripting (XSS)
+# Open Redirect to XSS via destUrl Parameter
 
 #### Description
 The application allows users to access external resources via a redirect functionality. The `destUrl` parameter in URLs such as `https://insecure-website.com/resources/course/redirect?destUrl=payload` is not properly validated or restricted, resulting in an open redirect vulnerability. Attackers can leverage this to redirect users to any external site or even inject JavaScript payloads, leading to potential XSS attacks.
